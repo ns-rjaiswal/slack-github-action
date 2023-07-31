@@ -14,6 +14,8 @@ const SLACK_WEBHOOK_TYPES = {
   INCOMING_WEBHOOK: 'INCOMING_WEBHOOK',
 };
 
+var mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+
 module.exports = async function slackSend(core) {
   try {
     const botToken = process.env.SLACK_BOT_TOKEN;
@@ -75,6 +77,11 @@ module.exports = async function slackSend(core) {
       if (message.length > 0 || payload) {
         const ts = core.getInput('update-ts');
         await Promise.all(channelIds.split(',').map(async (channelId) => {
+          if (channelId.match(mailformat)) {
+            let userByEmail = await web.users.lookupByEmail({email : channelId})
+            console.log(userByEmail)
+            channelId = userByEmail.user.id
+          }
           if (ts) {
           // update message
             webResponse = await web.chat.update({ ts, channel: channelId.trim(), text: message, ...(payload || {}) });
